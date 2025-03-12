@@ -13,7 +13,11 @@ struct ContentView: View {
             Image(systemName: "globe")
                 .imageScale(.large)
                 .foregroundStyle(.tint)
+<<<<<<< HEAD
             Text("Hello, worldsw!")
+=======
+            Text("Test Commit")
+>>>>>>> 2f68f42 (Test commit into github)
         }
         .padding()
     }
