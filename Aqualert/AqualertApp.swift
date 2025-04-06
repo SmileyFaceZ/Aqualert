@@ -6,9 +6,16 @@
 //
 
 import SwiftUI
+import Firebase
 
 @main
 struct AqualertApp: App {
+    
+    init() {
+        FirebaseApp.configure();
+        print("config firebase")
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
