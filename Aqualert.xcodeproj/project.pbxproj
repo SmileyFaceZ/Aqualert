@@ -6,6 +6,18 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXCopyFilesBuildPhase section */
+		E1A093212D85DC6B00D192BF /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXBuildFile section */
 		E1F00E9F2DA2957E002B6BD7 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = E1F00E9E2DA2957E002B6BD7 /* FirebaseAnalytics */; };
 		E1F00EA12DA2957E002B6BD7 /* FirebaseAnalyticsOnDeviceConversion in Frameworks */ = {isa = PBXBuildFile; productRef = E1F00EA02DA2957E002B6BD7 /* FirebaseAnalyticsOnDeviceConversion */; };
@@ -34,6 +46,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		E1A093232D85DC6B00D192BF /* libComponents.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libComponents.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		E1D5FE4D2D818D8B00F8FAB1 /* Aqualert.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Aqualert.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -46,6 +59,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		E1A093202D85DC6B00D192BF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1D5FE4A2D818D8B00F8FAB1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -93,6 +113,7 @@
 			isa = PBXGroup;
 			children = (
 				E1D5FE4D2D818D8B00F8FAB1 /* Aqualert.app */,
+				E1A093232D85DC6B00D192BF /* libComponents.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -107,6 +128,25 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		E1A093222D85DC6B00D192BF /* Components */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E1A093272D85DC6C00D192BF /* Build configuration list for PBXNativeTarget "Components" */;
+			buildPhases = (
+				E1A0931F2D85DC6B00D192BF /* Sources */,
+				E1A093202D85DC6B00D192BF /* Frameworks */,
+				E1A093212D85DC6B00D192BF /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Components;
+			packageProductDependencies = (
+			);
+			productName = Components;
+			productReference = E1A093232D85DC6B00D192BF /* libComponents.a */;
+			productType = "com.apple.product-type.library.static";
+		};
 		E1D5FE4C2D818D8B00F8FAB1 /* Aqualert */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = E1D5FE5B2D818D8D00F8FAB1 /* Build configuration list for PBXNativeTarget "Aqualert" */;
@@ -163,6 +203,9 @@
 				LastSwiftUpdateCheck = 1620;
 				LastUpgradeCheck = 1620;
 				TargetAttributes = {
+					E1A093222D85DC6B00D192BF = {
+						CreatedOnToolsVersion = 16.2;
+					};
 					E1D5FE4C2D818D8B00F8FAB1 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -186,6 +229,7 @@
 			projectRoot = "";
 			targets = (
 				E1D5FE4C2D818D8B00F8FAB1 /* Aqualert */,
+				E1A093222D85DC6B00D192BF /* Components */,
 			);
 		};
 /* End PBXProject section */
@@ -201,6 +245,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		E1A0931F2D85DC6B00D192BF /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		E1D5FE492D818D8B00F8FAB1 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -211,6 +262,30 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		E1A093282D85DC6C00D192BF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E1A093292D85DC6C00D192BF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 		E1D5FE592D818D8D00F8FAB1 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -397,6 +472,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		E1A093272D85DC6C00D192BF /* Build configuration list for PBXNativeTarget "Components" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E1A093282D85DC6C00D192BF /* Debug */,
+				E1A093292D85DC6C00D192BF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		E1D5FE482D818D8B00F8FAB1 /* Build configuration list for PBXProject "Aqualert" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
