@@ -1,16 +1,18 @@
+import React, { useState } from "react";
 import {
   View,
   Text,
-  Platform,
-  KeyboardAvoidingView,
   TextInput,
   TouchableOpacity,
+  Platform,
+  KeyboardAvoidingView,
   ActivityIndicator,
+  Image,
 } from "react-native";
-import React, { useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useAuthApp } from "../../auth/authApp.js";
+import { useAuthApp } from "../../auth/authApp";
+import styles from "../../assets/styles/signup.js";
 
 export default function Signup() {
   const [username, setUsername] = useState("");
@@ -18,8 +20,7 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const { user, isLoading, register } = useAuthApp();
-
+  const { isLoading, register } = useAuthApp();
   const router = useRouter();
 
   const handleSignup = async () => {
@@ -31,87 +32,83 @@ export default function Signup() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <View>
-        <View>
-          <Text>Aqualert</Text>
+      <Image
+        source={require("../../assets/images/bottle-of-water-rafiki.png")}
+        style={styles.image}
+      />
 
-          <View>
-            {/* Username Input */}
-            <View>
-              <Text>Username</Text>
-              <View>
-                <Ionicons name="person-outline" size={24} />
-                <TextInput
-                  placeholder="John Doe"
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                />
-              </View>
-            </View>
+      <View style={styles.inner}>
+        <Text style={styles.title}>Aqualert</Text>
+        <Text style={styles.subtitle}>Stay hydrated. Create your account.</Text>
 
-            {/* Email Input */}
-            <View>
-              <Text>Email</Text>
-              <View>
-                <Ionicons name="mail-outline" size={20} />
-                <TextInput
-                  placeholder="johndoe123@email.com"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
-              </View>
-            </View>
+        {/* Username */}
+        <View style={styles.inputGroup}>
+          <Ionicons name="person-outline" size={20} color="#4A90E2" />
+          <TextInput
+            placeholder="Username"
+            placeholderTextColor="#888"
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+          />
+        </View>
 
-            {/* Password Input */}
-            <View>
-              <Text>Password</Text>
-              <View>
-                <Ionicons name="lock-closed-outline" size={20} />
-                <TextInput
-                  placeholder="********"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <Ionicons
-                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                    size={20}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
+        {/* Email */}
+        <View style={styles.inputGroup}>
+          <Ionicons name="mail-outline" size={20} color="#4A90E2" />
+          <TextInput
+            placeholder="Email address"
+            placeholderTextColor="#888"
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+        </View>
 
-            {/* Signup Button */}
-            <TouchableOpacity
-              onPress={() => handleSignup()}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text>Sign Up</Text>
-              )}
-            </TouchableOpacity>
+        {/* Password */}
+        <View style={styles.inputGroup}>
+          <Ionicons name="lock-closed-outline" size={20} color="#4A90E2" />
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor="#888"
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color="#4A90E2"
+            />
+          </TouchableOpacity>
+        </View>
 
-            {/* Footer */}
-            <View>
-              <Text>
-                Already have an account?
-                <TouchableOpacity onPress={() => router.back()}>
-                  <Text> Login</Text>
-                </TouchableOpacity>
-              </Text>
-            </View>
-          </View>
+        {/* Sign Up Button */}
+        <TouchableOpacity
+          style={styles.button}
+          onPress={handleSignup}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Sign Up</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Already have an account?</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Text style={styles.loginLink}> Login</Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
