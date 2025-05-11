@@ -53,4 +53,33 @@ export const useReminderApp = create((set) => ({
       console.error("Error deleting reminder:", error);
     }
   },
+  changeNotified: async (reminderId) => {
+    set({ isLoading: true });
+    try {
+      const response = await fetch(`${API_URL}/reminders/${reminderId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update reminder");
+      }
+
+      const data = await response.json();
+      set((state) => ({
+        reminders: state.reminders.map((reminder) =>
+          reminder._id === reminderId
+            ? { ...reminder, is_notified: data.is_notified }
+            : reminder
+        ),
+        isLoading: false,
+      }));
+      return data;
+    } catch (error) {
+      set({ isLoading: false });
+      console.error("Error updating reminder:", error);
+    }
+  },
 }));

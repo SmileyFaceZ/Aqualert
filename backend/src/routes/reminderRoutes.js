@@ -46,4 +46,20 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
+// Change notified status
+router.patch("/:id", async (req, res) => {
+  try {
+    const reminder = await Reminder.findById(req.params.id);
+    if (!reminder) {
+      return res.status(404).json({ error: "Reminder not found." });
+    }
+
+    reminder.is_notified = !reminder.is_notified;
+    await reminder.save();
+    res.json(reminder);
+  } catch (error) {
+    res.status(500).json({ error: error });
+  }
+});
+
 export default router;

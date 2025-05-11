@@ -30,7 +30,8 @@ export default function ClockPage() {
   const [reminders, setReminders] = useState([]);
   const [waterSize, setWaterSize] = useState("250");
   const { user } = useAuthApp();
-  const { isLoading, getReminders, cancelReminder } = useReminderApp();
+  const { isLoading, getReminders, cancelReminder, changeNotified } =
+    useReminderApp();
 
   useEffect(() => {
     const setupNotifications = async () => {
@@ -175,7 +176,6 @@ export default function ClockPage() {
   };
 
   const handleCancleReminder = async (id) => {
-    console.log("Cancelling reminder with ID:", id);
     try {
       await Notifications.cancelScheduledNotificationAsync(id);
       const data = await cancelReminder(id);
@@ -207,6 +207,8 @@ export default function ClockPage() {
       });
       reminder.id = newId;
     }
+
+    await changeNotified(reminder._id);
 
     setReminders((prev) =>
       prev.map((r) =>
