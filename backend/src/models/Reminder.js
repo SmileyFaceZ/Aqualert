@@ -5,19 +5,19 @@ const reminderSchema = new mongoose.Schema(
     user_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
     scheduled_time: {
       type: Date,
-      required: true
+      required: true,
     },
-    message: {
-      type: String,
-      required: true
-    }
+    water_size: {
+      type: Number,
+      required: true,
+    },
   },
   {
-    timestamps: true
+    timestamps: true,
   }
 );
 
