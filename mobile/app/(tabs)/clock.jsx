@@ -30,7 +30,7 @@ export default function ClockPage() {
   const [reminders, setReminders] = useState([]);
   const [waterSize, setWaterSize] = useState("250");
   const { user } = useAuthApp();
-  const { isLoading, getReminders } = useReminderApp();
+  const { isLoading, getReminders, cancelReminder } = useReminderApp();
 
   useEffect(() => {
     const setupNotifications = async () => {
@@ -174,13 +174,17 @@ export default function ClockPage() {
     }
   };
 
-  const cancelReminder = async (id) => {
+  const handleCancleReminder = async (id) => {
+    console.log("Cancelling reminder with ID:", id);
     try {
       await Notifications.cancelScheduledNotificationAsync(id);
-      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+      const data = await cancelReminder(id);
+      if (data) {
+        Alert.alert("Success", data.message);
+      }
       setReminders((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
-      Alert.alert("Error", "Failed to cancel reminder.");
+      Alert.alert("Error", "Failed to cancel reminder.", error.message);
     }
   };
 
@@ -258,7 +262,7 @@ export default function ClockPage() {
               color={isActive ? "#aaa" : "#007AFF"}
             />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => cancelReminder(item.id)}>
+          <TouchableOpacity onPress={() => handleCancleReminder(item.id)}>
             <Ionicons name="trash-outline" size={24} color="red" />
           </TouchableOpacity>
         </View>
