@@ -11,8 +11,10 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
-import { Picker } from "@react-native-picker/picker";
 import styles from "../../assets/styles/clock";
+import { API_URL } from "../../constants/api.js";
+import { useAuthApp } from "../../auth/authApp.js";
+import { useReminderApp } from "../../auth/reminderApp.js";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -27,6 +29,8 @@ export default function ClockPage() {
   const [date, setDate] = useState(new Date());
   const [reminders, setReminders] = useState([]);
   const [waterSize, setWaterSize] = useState("250");
+  const { user } = useAuthApp();
+  const { isLoading, getReminders } = useReminderApp();
 
   useEffect(() => {
     const setupNotifications = async () => {
@@ -49,7 +53,26 @@ export default function ClockPage() {
       }
     };
 
+    const fetchReminders = async () => {
+      try {
+        const data = await getReminders(user._id);
+        if (!data) return;
+
+        const formatted = data.map((r) => ({
+          ...r,
+          id: r._id,
+          time: r.scheduled_time,
+          waterSize: r.water_size,
+          enabled: r.is_notified,
+        }));
+        setReminders(formatted);
+      } catch (err) {
+        console.error("Failed to load reminders:", err);
+      }
+    };
+
     setupNotifications();
+    fetchReminders();
   }, []);
 
   const showDatePicker = () => setDatePickerVisibility(true);
@@ -69,7 +92,6 @@ export default function ClockPage() {
     selectedTime.setSeconds(0);
     selectedTime.setMilliseconds(0);
 
-    // 🔒 Prevent duplicates (by checking same hour and minute)
     const duplicate = reminders.some((reminder) => {
       const existing = new Date(reminder.time);
       return (
@@ -107,7 +129,7 @@ export default function ClockPage() {
         };
       }
 
-      const id = await Notifications.scheduleNotificationAsync({
+      const localId = await Notifications.scheduleNotificationAsync({
         content: {
           title: "💧 Time to hydrate!",
           body: `Drink ${waterSize} ml of water.`,
@@ -116,14 +138,32 @@ export default function ClockPage() {
         trigger,
       });
 
+      const res = await fetch(`${API_URL}/reminders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id: user._id,
+          scheduled_time: selectedTime.toISOString(),
+          water_size: waterSize,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Backend reminder creation failed.");
+      }
+
+      const newReminder = await res.json();
+
       setReminders((prev) => [
         ...prev,
         {
-          id,
-          time: selectedTime.toISOString(),
+          id: newReminder._id,
+          time: newReminder.scheduled_time,
           enabled: true,
           repeats: isInFutureToday,
-          waterSize,
+          waterSize: newReminder.water_size,
         },
       ]);
 
@@ -137,6 +177,7 @@ export default function ClockPage() {
   const cancelReminder = async (id) => {
     try {
       await Notifications.cancelScheduledNotificationAsync(id);
+      await fetch(`${API_URL}/${id}`, { method: "DELETE" });
       setReminders((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
       Alert.alert("Error", "Failed to cancel reminder.");
@@ -233,7 +274,6 @@ export default function ClockPage() {
           <Text style={styles.subtitle}>Set up your hydration reminders</Text>
         </View>
 
-        {/* Time Picker */}
         <TouchableOpacity onPress={showDatePicker} style={styles.clockCard}>
           <View>
             <Text style={styles.clockTime}>
@@ -247,7 +287,6 @@ export default function ClockPage() {
           <Ionicons name="time-outline" size={26} color="#5A9BF6" />
         </TouchableOpacity>
 
-        {/* Bottle Picker */}
         <View style={styles.pickerContainer}>
           <Text style={styles.pickerLabel}>Select your drink size</Text>
           <View style={styles.bottleOptions}>
@@ -291,16 +330,14 @@ export default function ClockPage() {
           minimumDate={new Date()}
         />
 
-        {/* Reminder List */}
         <FlatList
           data={reminders}
           keyExtractor={(item) => item.id}
           renderItem={renderReminderItem}
-          contentContainerStyle={{ paddingBottom: 100 }} // extra space for button
+          contentContainerStyle={{ paddingBottom: 100 }}
         />
       </View>
 
-      {/* Fixed Add Button at Bottom */}
       <TouchableOpacity style={styles.saveButton} onPress={scheduleReminder}>
         <Text style={styles.saveButtonText}>Add Reminder</Text>
       </TouchableOpacity>
