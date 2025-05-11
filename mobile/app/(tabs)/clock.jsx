@@ -11,6 +11,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { Picker } from "@react-native-picker/picker";
 import styles from "../../assets/styles/clock";
 
 Notifications.setNotificationHandler({
@@ -25,6 +26,7 @@ export default function ClockPage() {
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
   const [date, setDate] = useState(new Date());
   const [reminders, setReminders] = useState([]);
+  const [waterSize, setWaterSize] = useState("250");
 
   useEffect(() => {
     const setupNotifications = async () => {
@@ -59,7 +61,6 @@ export default function ClockPage() {
   };
 
   const scheduleReminder = async () => {
-    console.log("Ckicked scheduleReminder");
     const now = new Date();
     const selectedTime = new Date();
 
@@ -68,22 +69,51 @@ export default function ClockPage() {
     selectedTime.setSeconds(0);
     selectedTime.setMilliseconds(0);
 
-    if (selectedTime <= now) {
-      selectedTime.setDate(selectedTime.getDate() + 1);
+    // 🔒 Prevent duplicates (by checking same hour and minute)
+    const duplicate = reminders.some((reminder) => {
+      const existing = new Date(reminder.time);
+      return (
+        existing.getHours() === selectedTime.getHours() &&
+        existing.getMinutes() === selectedTime.getMinutes()
+      );
+    });
+
+    if (duplicate) {
+      Alert.alert(
+        "Duplicate Reminder",
+        "You already have a reminder set at this time."
+      );
+      return;
     }
 
+    const isInFutureToday = selectedTime.getTime() > now.getTime();
+
     try {
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "💧 Time to hydrate!",
-          body: "Drink 250 ml of water.",
-          sound: true,
-        },
-        trigger: {
+      let trigger;
+
+      if (isInFutureToday) {
+        trigger = {
           hour: selectedTime.getHours(),
           minute: selectedTime.getMinutes(),
           repeats: true,
+        };
+      } else {
+        const delaySeconds = Math.floor(
+          (selectedTime.getTime() + 24 * 60 * 60 * 1000 - now.getTime()) / 1000
+        );
+        trigger = {
+          seconds: delaySeconds,
+          repeats: false,
+        };
+      }
+
+      const id = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "💧 Time to hydrate!",
+          body: `Drink ${waterSize} ml of water.`,
+          sound: true,
         },
+        trigger,
       });
 
       setReminders((prev) => [
@@ -91,12 +121,16 @@ export default function ClockPage() {
         {
           id,
           time: selectedTime.toISOString(),
+          enabled: true,
+          repeats: isInFutureToday,
+          waterSize,
         },
       ]);
 
-      Alert.alert("Success", "Reminder added!");
+      Alert.alert("Success", `Reminder added for ${waterSize} ml!`);
     } catch (error) {
       Alert.alert("Error", "Failed to schedule reminder.");
+      console.error(error);
     }
   };
 
@@ -109,63 +143,167 @@ export default function ClockPage() {
     }
   };
 
+  const toggleReminder = async (reminder) => {
+    if (reminder.enabled) {
+      await Notifications.cancelScheduledNotificationAsync(reminder.id);
+    } else {
+      const dateObj = new Date(reminder.time);
+      const newId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "💧 Time to hydrate!",
+          body: `Drink ${reminder.waterSize || "250"} ml of water.`,
+          sound: true,
+        },
+        trigger: {
+          hour: dateObj.getHours(),
+          minute: dateObj.getMinutes(),
+          repeats: true,
+        },
+      });
+      reminder.id = newId;
+    }
+
+    setReminders((prev) =>
+      prev.map((r) =>
+        r.time === reminder.time
+          ? { ...r, id: reminder.id, enabled: !r.enabled }
+          : r
+      )
+    );
+  };
+
   const renderReminderItem = ({ item }) => {
     const dateObj = new Date(item.time);
+    const formattedTime = dateObj.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const isActive = item.enabled;
+
     return (
-      <View style={styles.reminderItem}>
-        <View>
-          <Text style={styles.clockTime}>
-            {dateObj.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
-          <Text style={styles.volumeText}>{dateObj.toDateString()}</Text>
+      <View
+        style={[styles.reminderItemCard, !isActive && styles.reminderInactive]}
+      >
+        <View style={styles.reminderInfo}>
+          <View style={styles.reminderIcon}>
+            <Ionicons
+              name="time-outline"
+              size={28}
+              color={isActive ? "#5A9BF6" : "#ccc"}
+            />
+          </View>
+          <View>
+            <Text style={styles.reminderTime}>{formattedTime}</Text>
+            <Text style={styles.reminderText}>
+              💧 Water: {item.waterSize || "250"} ml
+            </Text>
+            <Text
+              style={[
+                styles.reminderStatus,
+                { color: isActive ? "green" : "gray" },
+              ]}
+            >
+              {isActive ? "Active" : "Disabled"}
+            </Text>
+          </View>
         </View>
-        <TouchableOpacity onPress={() => cancelReminder(item.id)}>
-          <Ionicons name="trash-outline" size={24} color="red" />
-        </TouchableOpacity>
+        <View style={styles.reminderActions}>
+          <TouchableOpacity onPress={() => toggleReminder(item)}>
+            <Ionicons
+              name={
+                isActive ? "notifications-off-outline" : "notifications-outline"
+              }
+              size={24}
+              color={isActive ? "#aaa" : "#007AFF"}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => cancelReminder(item.id)}>
+            <Ionicons name="trash-outline" size={24} color="red" />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>💧 Aqualert</Text>
-        <Text style={styles.subtitle}>Set up your hydration reminders</Text>
+      <View style={{ flex: 1, paddingHorizontal: 20 }}>
+        <View style={styles.header}>
+          <Text style={styles.title}>💧 Aqualert</Text>
+          <Text style={styles.subtitle}>Set up your hydration reminders</Text>
+        </View>
+
+        {/* Time Picker */}
+        <TouchableOpacity onPress={showDatePicker} style={styles.clockCard}>
+          <View>
+            <Text style={styles.clockTime}>
+              {date.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </Text>
+            <Text style={styles.volumeText}>Tap to change time</Text>
+          </View>
+          <Ionicons name="time-outline" size={26} color="#5A9BF6" />
+        </TouchableOpacity>
+
+        {/* Bottle Picker */}
+        <View style={styles.pickerContainer}>
+          <Text style={styles.pickerLabel}>Select your drink size</Text>
+          <View style={styles.bottleOptions}>
+            {[
+              { label: "200 ml", value: "200", icon: "wine-outline" },
+              { label: "250 ml", value: "250", icon: "beer-outline" },
+              { label: "300 ml", value: "300", icon: "cafe-outline" },
+              { label: "500 ml", value: "500", icon: "water-outline" },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.value}
+                style={[
+                  styles.bottleCard,
+                  waterSize === item.value && styles.bottleCardSelected,
+                ]}
+                onPress={() => setWaterSize(item.value)}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={32}
+                  color={waterSize === item.value ? "#fff" : "#5A9BF6"}
+                />
+                <Text
+                  style={[
+                    styles.bottleLabel,
+                    waterSize === item.value && styles.bottleLabelSelected,
+                  ]}
+                >
+                  {item.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        <DateTimePickerModal
+          isVisible={isDatePickerVisible}
+          mode="time"
+          onConfirm={handleConfirm}
+          onCancel={hideDatePicker}
+          minimumDate={new Date()}
+        />
+
+        {/* Reminder List */}
+        <FlatList
+          data={reminders}
+          keyExtractor={(item) => item.id}
+          renderItem={renderReminderItem}
+          contentContainerStyle={{ paddingBottom: 100 }} // extra space for button
+        />
       </View>
 
-      <TouchableOpacity onPress={showDatePicker} style={styles.clockCard}>
-        <View>
-          <Text style={styles.clockTime}>
-            {date.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </Text>
-        </View>
-        <Ionicons name="time-outline" size={26} color="#5A9BF6" />
-      </TouchableOpacity>
-
-      <DateTimePickerModal
-        isVisible={isDatePickerVisible}
-        mode="time"
-        onConfirm={handleConfirm}
-        onCancel={hideDatePicker}
-        minimumDate={new Date()}
-      />
-
+      {/* Fixed Add Button at Bottom */}
       <TouchableOpacity style={styles.saveButton} onPress={scheduleReminder}>
         <Text style={styles.saveButtonText}>Add Reminder</Text>
       </TouchableOpacity>
-
-      <FlatList
-        data={reminders}
-        keyExtractor={(item) => item.id}
-        renderItem={renderReminderItem}
-        contentContainerStyle={{ paddingTop: 20 }}
-      />
     </SafeAreaView>
   );
 }
