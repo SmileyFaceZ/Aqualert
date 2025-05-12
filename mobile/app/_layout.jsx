@@ -1,10 +1,11 @@
 import SafeScreen from "../components/SafeScreen";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { SafeAreaProvider } from "react-native-safe-area-context";
+import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useAuthApp } from "../auth/authApp.js";
 import { useEffect, useState } from "react";
 import React from "react";
+import FlashMessage from "react-native-flash-message";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function RootLayout() {
   const { checkAuth, user, token, isNewUser } = useAuthApp();
 
   const [isReady, setIsReady] = useState(false);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     setIsReady(true);
@@ -38,6 +40,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <SafeScreen>
+        <FlashMessage
+          position="top"
+          style={{ marginTop: insets.top }}
+        />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />

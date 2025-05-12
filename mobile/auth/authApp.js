@@ -18,11 +18,11 @@ export const useAuthApp = create((set) => ({
         body: JSON.stringify({ username, email, password }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to register");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
 
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
@@ -49,11 +49,11 @@ export const useAuthApp = create((set) => ({
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to login");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
+      }
 
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);

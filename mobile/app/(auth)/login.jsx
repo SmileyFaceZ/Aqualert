@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import { useAuthApp } from "../../auth/authApp.js";
 import styles from "../../assets/styles/login.js";
+import { showMessage } from "react-native-flash-message";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -24,7 +25,13 @@ export default function Login() {
   const handleLogin = async () => {
     const result = await login(email, password);
     if (!result.success) {
-      alert(result.error);
+      showMessage({
+        message: "Login Failed",
+        description: result.error,
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
     }
   };
 

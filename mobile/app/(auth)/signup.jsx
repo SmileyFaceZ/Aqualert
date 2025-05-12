@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useAuthApp } from "../../auth/authApp";
 import styles from "../../assets/styles/signup.js";
+import { showMessage } from "react-native-flash-message";
 
 export default function Signup() {
   const [username, setUsername] = useState("");
@@ -26,7 +27,13 @@ export default function Signup() {
   const handleSignup = async () => {
     const result = await register(username, email, password);
     if (!result.success) {
-      alert(result.error);
+      showMessage({
+        message: "Signup Failed",
+        description: result.error,
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
     }
   };
 
