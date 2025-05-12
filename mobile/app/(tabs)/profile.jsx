@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  ScrollView
-} from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  ScrollView,
+} from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/api";
-import { useRouter } from 'expo-router';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from "expo-router";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import styles from "../../assets/styles/profile.js";
+import { useAuthApp } from "../../auth/authApp.js";
 
 const API_Path = `${API_URL}/users/me`;
 
@@ -21,32 +22,31 @@ export default function Profile() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    firstname: '',
-    lastname: '',
-    age: new Date()
+    username: "",
+    email: "",
+    firstname: "",
+    lastname: "",
+    age: new Date(),
   });
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { logout } = useAuthApp();
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const token = await AsyncStorage.getItem('token');
+        const token = await AsyncStorage.getItem("token");
         if (!token) {
           handleAuthError();
           return;
         }
 
-        console.log("Using token:", token); // Debug log
-        
         const response = await fetch(API_Path, {
-          method: 'GET',
+          method: "GET",
           headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         });
 
@@ -62,15 +62,15 @@ export default function Profile() {
         const userData = await response.json();
         setUser(userData);
         setFormData({
-          username: userData.username || '',
-          email: userData.email || '',
-          firstname: userData.firstname || '',
-          lastname: userData.lastname || '',
-          age: userData.age ? new Date(userData.age) : new Date()
+          username: userData.username || "",
+          email: userData.email || "",
+          firstname: userData.firstname || "",
+          lastname: userData.lastname || "",
+          age: userData.age ? new Date(userData.age) : new Date(),
         });
       } catch (error) {
-        console.error('Error fetching user profile:', error);
-        Alert.alert('Error', 'Failed to load profile data');
+        console.error("Error fetching user profile:", error);
+        Alert.alert("Error", "Failed to load profile data");
       } finally {
         setLoading(false);
       }
@@ -81,39 +81,39 @@ export default function Profile() {
 
   const handleAuthError = async () => {
     Alert.alert(
-      'Authentication Error',
-      'Your session has expired. Please login again.',
+      "Authentication Error",
+      "Your session has expired. Please login again.",
       [
         {
-          text: 'OK',
+          text: "OK",
           onPress: async () => {
-            await AsyncStorage.removeItem('token');
-            router.replace('/login'); // Navigate to login screen
-          }
-        }
+            await AsyncStorage.removeItem("token");
+            router.replace("/login"); // Navigate to login screen
+          },
+        },
       ]
     );
     setLoading(false);
   };
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setFormData(prev => ({ ...prev, age: selectedDate }));
+      setFormData((prev) => ({ ...prev, age: selectedDate }));
     }
   };
 
   const handleGoBack = () => {
-    router.replace('/');
+    router.replace("/");
   };
 
   const handleSave = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
+      const token = await AsyncStorage.getItem("token");
       if (!token) {
         handleAuthError();
         return;
@@ -122,14 +122,14 @@ export default function Profile() {
       // Format the date for the API
       const formattedData = {
         ...formData,
-        age: formData.age.toISOString() // Convert Date to ISO string for API
+        age: formData.age.toISOString(), // Convert Date to ISO string for API
       };
 
       const response = await fetch(API_Path, {
-        method: 'PUT',
+        method: "PUT",
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formattedData),
       });
@@ -146,16 +146,21 @@ export default function Profile() {
       const updatedUser = await response.json();
       setUser(updatedUser);
       setIsEditing(false);
-      Alert.alert('Success', 'Profile updated successfully!');
+      Alert.alert("Success", "Profile updated successfully!");
     } catch (error) {
-      console.error('Update error:', error);
-      Alert.alert('Error', 'Failed to update profile');
+      console.error("Update error:", error);
+      Alert.alert("Error", "Failed to update profile");
     }
   };
 
   if (loading) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
         <ActivityIndicator size="large" color="#6EC6F2" />
       </View>
     );
@@ -163,7 +168,12 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View
+        style={[
+          styles.container,
+          { justifyContent: "center", alignItems: "center" },
+        ]}
+      >
         <Text>Failed to load user data.</Text>
         <TouchableOpacity
           style={styles.retryButton}
@@ -175,8 +185,11 @@ export default function Profile() {
           <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.retryButton, { marginTop: 10, backgroundColor: '#f44336' }]}
-          onPress={() => router.put('/login')}
+          style={[
+            styles.retryButton,
+            { marginTop: 10, backgroundColor: "#f44336" },
+          ]}
+          onPress={() => router.put("/login")}
         >
           <Text style={styles.retryButtonText}>Go to Login</Text>
         </TouchableOpacity>
@@ -202,7 +215,11 @@ export default function Profile() {
             }
           }}
         >
-          <Icon name={isEditing ? 'check' : 'pencil'} size={20} color="#6EC6F2" />
+          <Icon
+            name={isEditing ? "check" : "pencil"}
+            size={20}
+            color="#6EC6F2"
+          />
         </TouchableOpacity>
       </View>
 
@@ -213,7 +230,7 @@ export default function Profile() {
           style={styles.input}
           value={formData.username}
           editable={isEditing}
-          onChangeText={text => handleInputChange('username', text)}
+          onChangeText={(text) => handleInputChange("username", text)}
         />
 
         <Text style={styles.label}>Email Address</Text>
@@ -221,7 +238,7 @@ export default function Profile() {
           style={styles.input}
           value={formData.email}
           editable={isEditing}
-          onChangeText={text => handleInputChange('email', text)}
+          onChangeText={(text) => handleInputChange("email", text)}
           keyboardType="email-address"
         />
 
@@ -230,7 +247,7 @@ export default function Profile() {
           style={styles.input}
           value={formData.firstname}
           editable={isEditing}
-          onChangeText={text => handleInputChange('firstname', text)}
+          onChangeText={(text) => handleInputChange("firstname", text)}
         />
 
         <Text style={styles.label}>Last Name</Text>
@@ -238,11 +255,11 @@ export default function Profile() {
           style={styles.input}
           value={formData.lastname}
           editable={isEditing}
-          onChangeText={text => handleInputChange('lastname', text)}
+          onChangeText={(text) => handleInputChange("lastname", text)}
         />
 
         <Text style={styles.label}>Date of Birth</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.input}
           disabled={!isEditing}
           onPress={() => isEditing && setShowDatePicker(true)}
@@ -262,69 +279,19 @@ export default function Profile() {
           />
         )}
       </View>
+
+      {/* Logout Button */}
+      <View style={styles.logoutContainer}>
+        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
+          <Icon
+            name="sign-out"
+            size={18}
+            color="#fff"
+            style={{ marginRight: 8 }}
+          />
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F3F8FB',
-    paddingTop: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    marginBottom: 12,
-  },
-  headerTitle: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  editIcon: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 6,
-    borderWidth: 2,
-    borderColor: '#6EC6F2',
-  },
-  form: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingBottom: 30,
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 6,
-    color: '#000',
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    marginBottom: 4,
-    color: '#000',
-  },
-  dateText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  retryButton: {
-    marginTop: 20,
-    backgroundColor: '#6EC6F2',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-});
