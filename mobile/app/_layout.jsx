@@ -1,5 +1,5 @@
 import SafeScreen from "../components/SafeScreen";
-import { Slot, Stack, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { useAuthApp } from "../auth/authApp.js";
@@ -9,7 +9,7 @@ import React from "react";
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
-  const { checkAuth, user, token } = useAuthApp();
+  const { checkAuth, user, token, isNewUser } = useAuthApp();
 
   const [isReady, setIsReady] = useState(false);
 
@@ -27,7 +27,11 @@ export default function RootLayout() {
     if (!isSignedIn && !inAuthScreen) {
       router.replace("/(auth)");
     } else if (isSignedIn && inAuthScreen) {
-      router.replace("/(tabs)");
+      if (isNewUser) {
+        router.replace("/(setup)");
+      } else {
+        router.replace("/(tabs)");
+      }
     }
   }, [isReady, user, token, segments]);
 
@@ -37,6 +41,7 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(setup)" />
         </Stack>
       </SafeScreen>
       <StatusBar style="dark" />

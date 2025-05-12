@@ -1,34 +1,53 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "Aqualert",
+    "slug": "aqualert",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/aqualert-logo.png",
     "scheme": "mobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSUserNotificationAlertUsageDescription": "This app uses notifications to remind you to drink water."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/aqualert-logo.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "notification": {
+        "color": "#007AFF",
+        "priority": "high",
+        "vibrate": [
+          0,
+          250,
+          250,
+          250,
+          0,
+          250,
+          250,
+          250
+        ],
+        "sticky": false
+      },
+      "package": "com.aqualert.app"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/aqualert-logo.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/aqualert-logo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
@@ -37,6 +56,12 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5b20a016-9222-4005-8177-92ac764ab7f8"
+      }
     }
   }
 }

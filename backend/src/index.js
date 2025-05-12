@@ -5,6 +5,8 @@ import cors from "cors";
 
 import authRoutes from "./routes/authRoutes.js";
 import apiRoutes from "./routes/apiRoutes.js";
+import reminderRoutes from "./routes/reminderRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,6 +28,8 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api", apiRoutes);
+app.use("/api/reminders", reminderRoutes);
+app.use("/api/users", userRoutes);
 
 // Listen on all network interfaces (0.0.0.0) instead of just localhost
 app.listen(PORT, '0.0.0.0', () => {

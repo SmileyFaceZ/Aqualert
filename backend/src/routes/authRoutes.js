@@ -88,6 +88,7 @@ router.post("/login", async (req, res) => {
         username: user.username,
         email: user.email,
       },
+      isNewUser: true,
     });
   } catch (error) {
     console.log("Error in login route:", error);

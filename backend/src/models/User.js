@@ -20,15 +20,28 @@ const userSchema = new mongoose.Schema(
     },
     firstname: {
       type: String,
-      required: true,
+      default: null,
     },
     lastname: {
       type: String,
-      required: true,
+      default: null,
     },
-    age: {
+    birthdate: {
       type: Date,
-      required: true,
+      default: null,
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female"],
+      default: null,
+    },
+    weight: {
+      type: Number,
+      default: null,
+    },
+    height: {
+      type: Number,
+      default: null,
     },
   },
   {
