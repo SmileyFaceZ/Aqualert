@@ -1,4 +1,4 @@
-import { API_URL } from "../constants/api.js"
+import { API_URL } from "../constants/api.js";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 
@@ -6,6 +6,7 @@ export const useAuthApp = create((set) => ({
   user: null,
   token: null,
   isLoading: false,
+  isNewUser: false,
   register: async (username, email, password) => {
     set({ isLoading: true });
     try {
@@ -25,8 +26,10 @@ export const useAuthApp = create((set) => ({
 
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
+      await AsyncStorage.setItem("isNewUser", JSON.stringify(true));
 
-      set({ user: data.user, token: data.token, isLoading: false });
+      const isNewUser = JSON.parse(await AsyncStorage.getItem("isNewUser"));
+      set({ user: data.user, token: data.token, isNewUser, isLoading: false });
 
       return { success: true };
     } catch (error) {
@@ -54,8 +57,9 @@ export const useAuthApp = create((set) => ({
 
       await AsyncStorage.setItem("user", JSON.stringify(data.user));
       await AsyncStorage.setItem("token", data.token);
+      const isNewUser = JSON.parse(await AsyncStorage.getItem("isNewUser"));
 
-      set({ user: data.user, token: data.token, isLoading: false });
+      set({ user: data.user, token: data.token, isNewUser, isLoading: false });
 
       return { success: true };
     } catch (error) {
@@ -69,8 +73,9 @@ export const useAuthApp = create((set) => ({
       const token = await AsyncStorage.getItem("token");
       const userJson = await AsyncStorage.getItem("user");
       const user = userJson ? JSON.parse(userJson) : null;
+      const isNewUser = JSON.parse(await AsyncStorage.getItem("isNewUser"));
 
-      set({ token, user });
+      set({ token, user, isNewUser });
     } catch (error) {
       console.log("Auth check failed", error);
     }
@@ -83,6 +88,42 @@ export const useAuthApp = create((set) => ({
       set({ token: null, user: null });
     } catch (error) {
       console.log("Logout failed", error);
+    }
+  },
+
+  updateProfile: async (profileData) => {
+    set({ isLoading: true });
+
+    try {
+      const token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        throw new Error("No token found");
+      }
+
+      const response = await fetch(`${API_URL}/users/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(profileData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update profile");
+      }
+
+      const data = await response.json();
+      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+      await AsyncStorage.setItem("isNewUser", JSON.stringify(false));
+
+      set({ user: data.user, isLoading: false });
+
+      return { success: true };
+    } catch (error) {
+      set({ isLoading: false });
+      return { success: false, error: error.message };
     }
   },
 }));

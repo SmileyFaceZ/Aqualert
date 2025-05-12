@@ -5,6 +5,7 @@ import cors from "cors";
 
 import authRoutes from "./routes/authRoutes.js";
 import reminderRoutes from "./routes/reminderRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,8 +15,10 @@ app.use(cors()); // Enable CORS for all routes
 
 app.use("/api/auth", authRoutes);
 app.use("/api/reminders", reminderRoutes);
+app.use("/api/users", userRoutes);
 
-app.listen(3000, () => {
+
+app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   connectDB();
 });
