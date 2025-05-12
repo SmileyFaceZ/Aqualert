@@ -5,7 +5,6 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Platform,
-  Alert,
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -15,6 +14,7 @@ import styles from "../../assets/styles/clock";
 import { API_URL } from "../../constants/api.js";
 import { useAuthApp } from "../../auth/authApp.js";
 import { useReminderApp } from "../../auth/reminderApp.js";
+import { showMessage } from "react-native-flash-message";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -102,10 +102,13 @@ export default function ClockPage() {
     });
 
     if (duplicate) {
-      Alert.alert(
-        "Duplicate Reminder",
-        "You already have a reminder set at this time."
-      );
+      showMessage({
+        message: "Duplicate Reminder",
+        description: "You already have a reminder set at this time.",
+        type: "danger",
+        icon: "warning",
+        duration: 4000,
+      });
       return;
     }
 
@@ -168,10 +171,21 @@ export default function ClockPage() {
         },
       ]);
 
-      Alert.alert("Success", `Reminder added for ${waterSize} ml!`);
+      showMessage({
+        message: "Reminder Added",
+        description: `Reminder set for ${waterSize} ml!`,
+        type: "success",
+        icon: "success",
+        duration: 3000,
+      });
     } catch (error) {
-      Alert.alert("Error", "Failed to schedule reminder.");
-      console.error(error);
+      showMessage({
+        message: "Error",
+        description: "Failed to schedule reminder.",
+        type: "danger",
+        icon: "danger",
+        duration: 4000,
+      });
     }
   };
 
@@ -180,11 +194,23 @@ export default function ClockPage() {
       await Notifications.cancelScheduledNotificationAsync(id);
       const data = await cancelReminder(id);
       if (data) {
-        Alert.alert("Success", data.message);
+        showMessage({
+          message: "Reminder Cancelled",
+          description: "Reminder has been cancelled.",
+          type: "success",
+          icon: "success",
+          duration: 3000,
+        });
       }
       setReminders((prev) => prev.filter((item) => item.id !== id));
     } catch (error) {
-      Alert.alert("Error", "Failed to cancel reminder.", error.message);
+      showMessage({
+        message: "Error",
+        description: "Failed to cancel reminder.",
+        type: "danger",
+        icon: "danger",
+        duration: 4000,
+      });
     }
   };
 

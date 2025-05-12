@@ -25,7 +25,7 @@ router.put("/users/me", auth, async (req, res) => {
   try {
     const updates = req.body;
 
-    const allowedFields = ["username", "email"];
+    const allowedFields = ["username", "email", "firstname", "lastname", "birthdate", "weight", "height", "gender"];
     const filteredUpdates = {};
 
     for (const key of allowedFields) {

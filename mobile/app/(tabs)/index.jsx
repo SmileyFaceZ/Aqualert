@@ -1,67 +1,70 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  ScrollView, 
-  Alert, 
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
   ActivityIndicator,
   TextInput,
-  Modal
-} from 'react-native';
-import Icon from 'react-native-vector-icons/FontAwesome5';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+  Modal,
+} from "react-native";
+import Icon from "react-native-vector-icons/FontAwesome5";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/api";
+import { useAuthApp } from "../../auth/authApp.js";
+import { checkTokenValid } from "../../utils/token.js";
+import { showMessage } from "react-native-flash-message";
 
 const waterOptions = [
-  { id: 1, label: '100 ml', icon: 'glass-whiskey', amount: 100 },
-  { id: 2, label: '200 ml', icon: 'coffee', amount: 200 },
-  { id: 3, label: '250 ml', icon: 'glass-martini-alt', amount: 250 },
-  { id: 4, label: '600 ml', icon: 'wine-bottle', amount: 600 },
-  { id: 5, label: 'Custom', icon: 'edit', amount: 'custom' },
+  { id: 1, label: "100 ml", icon: "glass-martini-alt", amount: 100 },
+  { id: 2, label: "200 ml", icon: "coffee", amount: 200 },
+  { id: 3, label: "250 ml", icon: "glass-whiskey", amount: 250 },
+  { id: 4, label: "600 ml", icon: "wine-bottle", amount: 600 },
+  { id: 5, label: "Custom", icon: "edit", amount: "custom" },
 ];
 
-const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export default function Home() {
   const [selectedAmount, setSelectedAmount] = useState(100);
   const [todayData, setTodayData] = useState({
     goal_ml: 2000,
     consumed_ml: 0,
-    goal_achieved: false
+    goal_achieved: false,
   });
-  const [weeklyCompletion, setWeeklyCompletion] = useState(Array(7).fill(false));
+  const [weeklyCompletion, setWeeklyCompletion] = useState(
+    Array(7).fill(false)
+  );
   const [loading, setLoading] = useState(true);
-  const [currentTime, setCurrentTime] = useState('');
+  const [currentTime, setCurrentTime] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  
+
   // Target editing state
   const [isEditingTarget, setIsEditingTarget] = useState(false);
-  const [newTarget, setNewTarget] = useState('');
+  const [newTarget, setNewTarget] = useState("");
   const [updatingTarget, setUpdatingTarget] = useState(false);
-  
+
   // Custom intake state
   const [isCustomIntake, setIsCustomIntake] = useState(false);
-  const [customIntakeAmount, setCustomIntakeAmount] = useState('');
+  const [customIntakeAmount, setCustomIntakeAmount] = useState("");
   const [showCustomIntakeModal, setShowCustomIntakeModal] = useState(false);
+
+  const { logout } = useAuthApp();
 
   // Get token from AsyncStorage
   const getToken = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      console.log('Using token:', token);
-      
+      const token = await AsyncStorage.getItem("token");
+
       if (!token) {
         // Handle not authenticated case
-        Alert.alert('Error', 'You need to log in');
-        // Navigate to login screen if needed
-        // navigation.navigate('Login');
+        Alert.alert("Error", "You need to log in");
       }
       return token;
     } catch (error) {
-      console.error('Error getting token:', error);
+      console.error("Error getting token:", error);
       return null;
     }
   };
@@ -70,7 +73,7 @@ export default function Home() {
   const updateCurrentTime = () => {
     const now = new Date();
     const hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, "0");
     setCurrentTime(`${hours}:${minutes}`);
   };
 
@@ -81,14 +84,14 @@ export default function Home() {
       if (!token) return;
 
       const response = await axios.get(`${API_URL}/water/today`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       setTodayData(response.data);
       updateCurrentTime();
       setLoading(false);
     } catch (error) {
-      console.error('Error fetching today data:', error);
+      console.error("Error fetching today data:", error);
       setLoading(false);
     }
   };
@@ -97,32 +100,35 @@ export default function Home() {
   const fetchWeeklyData = async () => {
     try {
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        logout();
+        return;
+      }
 
       const response = await axios.get(`${API_URL}/water/weekly`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       // Process weekly data
       const weekData = Array(7).fill(false);
-      
-      response.data.forEach(day => {
+
+      response.data.forEach((day) => {
         const dayDate = new Date(day.date);
         const dayIndex = dayDate.getDay();
         weekData[dayIndex] = day.goal_achieved;
       });
-      
+
       setWeeklyCompletion(weekData);
     } catch (error) {
-      console.error('Error fetching weekly data:', error);
+      console.error("Error fetching weekly data:", error);
     }
   };
 
   // Handle option selection
   const handleOptionSelect = (option) => {
-    if (option.amount === 'custom') {
+    if (option.amount === "custom") {
       setIsCustomIntake(true);
-      setCustomIntakeAmount('');
+      setCustomIntakeAmount("");
       setShowCustomIntakeModal(true);
     } else {
       setIsCustomIntake(false);
@@ -132,20 +138,29 @@ export default function Home() {
 
   // Add water intake
   const addWaterIntake = async () => {
+    const isValid = await checkTokenValid(logout);
+    if (!isValid) return;
+
     if (submitting) return;
-    
+
     // Get the amount to add
     let amountToAdd = selectedAmount;
-    
+
     if (isCustomIntake) {
       const customAmount = parseInt(customIntakeAmount);
       if (isNaN(customAmount) || customAmount <= 0) {
-        Alert.alert('Invalid Input', 'Please enter a valid amount');
+        showMessage({
+          message: "Invalid Input",
+          description: "Please enter a valid amount",
+          type: "danger",
+          icon: "auto",
+          duration: 4000,
+        });
         return;
       }
       amountToAdd = customAmount;
     }
-    
+
     try {
       setSubmitting(true);
       const token = await getToken();
@@ -154,12 +169,12 @@ export default function Home() {
       const response = await axios.post(
         `${API_URL}/water/intake`,
         { amount: amountToAdd },
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setTodayData(response.data);
       updateCurrentTime();
-      
+
       // If goal achieved, update weekly data
       if (response.data.goal_achieved) {
         const newWeeklyData = [...weeklyCompletion];
@@ -167,10 +182,16 @@ export default function Home() {
         newWeeklyData[today] = true;
         setWeeklyCompletion(newWeeklyData);
       }
-      
+
       // Show success message
-      Alert.alert('Success', `Added ${amountToAdd}ml of water!`);
-      
+      showMessage({
+        message: "Success",
+        description: `Added ${amountToAdd}ml of water!`,
+        type: "success",
+        icon: "auto",
+        duration: 3000,
+      });
+
       // Reset custom intake
       if (isCustomIntake) {
         setShowCustomIntakeModal(false);
@@ -178,8 +199,14 @@ export default function Home() {
         setSelectedAmount(100); // Reset to default
       }
     } catch (error) {
-      console.error('Error adding water intake:', error);
-      Alert.alert('Error', 'Failed to add water intake');
+      console.error("Error adding water intake:", error);
+      showMessage({
+        message: "Error",
+        description: "Failed to add water intake",
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -188,50 +215,83 @@ export default function Home() {
   // Update water goal
   const updateWaterGoal = async () => {
     if (updatingTarget) return;
-    
+
     // Validate input
     const goalValue = parseInt(newTarget);
     if (isNaN(goalValue) || goalValue < 100) {
-      Alert.alert('Invalid Input', 'Please enter a valid number (minimum 100ml)');
+      showMessage({
+        message: "Invalid Input",
+        description: "Please enter a valid number (minimum 100ml)",
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
       return;
     }
-    
+
     try {
       setUpdatingTarget(true);
       const token = await getToken();
-      if (!token) return;
+      if (!token) {
+        logout();
+        return;
+      }
 
       const response = await axios.put(
         `${API_URL}/water/goal`,
         { goal_ml: goalValue },
-        { headers: { 'Authorization': `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      
+
       setTodayData(response.data);
       setIsEditingTarget(false);
-      Alert.alert('Success', `Daily water target updated to ${goalValue}ml`);
+      showMessage({
+        message: "Success",
+        description: `Daily water target updated to ${goalValue}ml`,
+        type: "success",
+        icon: "auto",
+        duration: 3000,
+      });
     } catch (error) {
-      console.error('Error updating water goal:', error);
-      Alert.alert('Error', 'Failed to update water goal');
+      console.error("Error updating water goal:", error);
+      showMessage({
+        message: "Error",
+        description: "Failed to update water goal",
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
     } finally {
       setUpdatingTarget(false);
     }
   };
 
   // Open target edit modal
-  const openTargetEditModal = () => {
+  const openTargetEditModal = async () => {
+    const isValid = await checkTokenValid(logout);
+    if (!isValid) return;
+
     setNewTarget(todayData.goal_ml.toString());
     setIsEditingTarget(true);
   };
 
   // Handle custom intake confirmation
-  const confirmCustomIntake = () => {
+  const confirmCustomIntake = async () => {
+    const isValid = await checkTokenValid(logout);
+    if (!isValid) return;
+
     const customAmount = parseInt(customIntakeAmount);
     if (isNaN(customAmount) || customAmount <= 0) {
-      Alert.alert('Invalid Input', 'Please enter a valid amount');
+      showMessage({
+        message: "Invalid Input",
+        description: "Please enter a valid amount",
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
       return;
     }
-    
+
     setShowCustomIntakeModal(false);
     addWaterIntake();
   };
@@ -243,22 +303,25 @@ export default function Home() {
       await fetchTodayData();
       await fetchWeeklyData();
     };
-    
+
     loadData();
-    
+
     // Set up interval to refresh data every 5 minutes
     const refreshInterval = setInterval(() => {
       fetchTodayData();
       fetchWeeklyData();
     }, 5 * 60 * 1000);
-    
+
     // Clean up interval on unmount
     return () => clearInterval(refreshInterval);
   }, []);
 
   // Calculate water level percentage for the glass visualization
-  const waterLevelPercentage = Math.min(100, (todayData.consumed_ml / todayData.goal_ml) * 100);
-  
+  const waterLevelPercentage = Math.min(
+    100,
+    (todayData.consumed_ml / todayData.goal_ml) * 100
+  );
+
   // Calculate number of glasses (assuming 1 glass = 200ml)
   const glassCount = Math.round(todayData.consumed_ml / 200);
 
@@ -279,7 +342,7 @@ export default function Home() {
         <Text style={styles.intakeInfo}>
           {todayData.consumed_ml}ml water ({glassCount} Glass)
         </Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.waterWave}
           onPress={openTargetEditModal}
         >
@@ -291,14 +354,19 @@ export default function Home() {
       {/* Glass Icon */}
       <View style={styles.glassContainer}>
         <View style={styles.glass}>
-          <View style={[styles.glassWaterLevel, { height: `${waterLevelPercentage}%` }]} />
+          <View
+            style={[
+              styles.glassWaterLevel,
+              { height: `${waterLevelPercentage}%` },
+            ]}
+          />
         </View>
       </View>
 
       {/* Progress Text */}
       <Text style={styles.progressText}>
-        {todayData.goal_achieved 
-          ? 'Goal achieved! Great job!' 
+        {todayData.goal_achieved
+          ? "Goal achieved! Great job!"
           : `${Math.round(waterLevelPercentage)}% of daily goal`}
       </Text>
 
@@ -317,18 +385,25 @@ export default function Home() {
               style={styles.optionIcon}
             />
             <Text style={styles.optionText}>{option.label}</Text>
-            <View 
+            <View
               style={[
-                styles.radioCircle, 
-                (!isCustomIntake && selectedAmount === option.amount) && styles.selectedRadio,
-                (isCustomIntake && option.amount === 'custom') && styles.selectedRadio
-              ]} 
+                styles.radioCircle,
+                !isCustomIntake &&
+                  selectedAmount === option.amount &&
+                  styles.selectedRadio,
+                isCustomIntake &&
+                  option.amount === "custom" &&
+                  styles.selectedRadio,
+              ]}
             />
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity 
-          style={[styles.confirmButton, (submitting || isCustomIntake) && styles.disabledButton]}
+        <TouchableOpacity
+          style={[
+            styles.confirmButton,
+            (submitting || isCustomIntake) && styles.disabledButton,
+          ]}
           onPress={addWaterIntake}
           disabled={submitting || isCustomIntake}
         >
@@ -346,8 +421,15 @@ export default function Home() {
         <View style={styles.weekRow}>
           {weekDays.map((day, index) => (
             <View key={day} style={styles.dayItem}>
-              <View style={[styles.checkCircle, weeklyCompletion[index] && styles.checked]}>
-                {weeklyCompletion[index] && <Icon name="check" size={12} color="#fff" />}
+              <View
+                style={[
+                  styles.checkCircle,
+                  weeklyCompletion[index] && styles.checked,
+                ]}
+              >
+                {weeklyCompletion[index] && (
+                  <Icon name="check" size={12} color="#fff" />
+                )}
               </View>
               <Text style={styles.dayText}>{day}</Text>
             </View>
@@ -365,7 +447,7 @@ export default function Home() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Daily Water Target</Text>
-            
+
             <TextInput
               style={styles.targetInput}
               value={newTarget}
@@ -374,17 +456,21 @@ export default function Home() {
               placeholder="Enter target in ml"
               placeholderTextColor="#999"
             />
-            
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => setIsEditingTarget(false)}
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton, updatingTarget && styles.disabledButton]}
+
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.saveButton,
+                  updatingTarget && styles.disabledButton,
+                ]}
                 onPress={updateWaterGoal}
                 disabled={updatingTarget}
               >
@@ -412,7 +498,7 @@ export default function Home() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Custom Water Intake</Text>
-            
+
             <TextInput
               style={styles.targetInput}
               value={customIntakeAmount}
@@ -422,9 +508,9 @@ export default function Home() {
               placeholderTextColor="#999"
               autoFocus={true}
             />
-            
+
             <View style={styles.modalButtons}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.modalButton, styles.cancelButton]}
                 onPress={() => {
                   setShowCustomIntakeModal(false);
@@ -433,9 +519,13 @@ export default function Home() {
               >
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.saveButton, submitting && styles.disabledButton]}
+
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.saveButton,
+                  submitting && styles.disabledButton,
+                ]}
                 onPress={confirmCustomIntake}
                 disabled={submitting}
               >
@@ -456,25 +546,25 @@ export default function Home() {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    backgroundColor: '#EAF6FB',
+    backgroundColor: "#EAF6FB",
     flexGrow: 1,
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#EAF6FB',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#EAF6FB",
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#0093E9',
+    color: "#0093E9",
   },
   intakeCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
@@ -482,70 +572,70 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
   },
   intakeInfo: {
     fontSize: 16,
-    color: '#888',
+    color: "#888",
     marginBottom: 12,
   },
   waterWave: {
-    backgroundColor: '#B3E5FC',
+    backgroundColor: "#B3E5FC",
     padding: 16,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
   targetLabel: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#444',
+    fontWeight: "600",
+    color: "#444",
   },
   targetAmount: {
     fontSize: 18,
-    color: '#555',
+    color: "#555",
   },
   glassContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginVertical: 20,
   },
   glass: {
     width: 100,
     height: 160,
     borderWidth: 10,
-    borderColor: '#81D4FA',
+    borderColor: "#81D4FA",
     borderBottomWidth: 0,
     borderRadius: 10,
-    position: 'relative',
-    overflow: 'hidden',
+    position: "relative",
+    overflow: "hidden",
   },
   glassWaterLevel: {
-    backgroundColor: '#81D4FA',
-    position: 'absolute',
+    backgroundColor: "#81D4FA",
+    position: "absolute",
     bottom: 0,
-    width: '100%',
-    height: '40%',
+    width: "100%",
+    height: "40%",
   },
   progressText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 16,
-    color: '#0288D1',
-    fontWeight: '600',
+    color: "#0288D1",
+    fontWeight: "600",
     marginBottom: 20,
   },
   optionsContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 20,
     padding: 20,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
     marginBottom: 30,
   },
   option: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 14,
   },
   optionIcon: {
@@ -554,7 +644,7 @@ const styles = StyleSheet.create({
   optionText: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     marginLeft: 12,
   },
   radioCircle: {
@@ -562,75 +652,75 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#90CAF9',
+    borderColor: "#90CAF9",
   },
   selectedRadio: {
-    backgroundColor: '#90CAF9',
+    backgroundColor: "#90CAF9",
   },
   confirmButton: {
-    backgroundColor: '#90CAF9',
+    backgroundColor: "#90CAF9",
     paddingVertical: 12,
     borderRadius: 10,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
   disabledButton: {
-    backgroundColor: '#CCCCCC',
+    backgroundColor: "#CCCCCC",
   },
   confirmText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   weeklyContainer: {
-    backgroundColor: '#B3E5FC',
+    backgroundColor: "#B3E5FC",
     padding: 20,
     borderRadius: 20,
   },
   weeklyTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   weekRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   dayItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   checkCircle: {
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: '#E0F7FA',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#E0F7FA",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 4,
   },
   checked: {
-    backgroundColor: '#0288D1',
+    backgroundColor: "#0288D1",
   },
   dayText: {
     fontSize: 14,
-    color: '#fff',
+    color: "#fff",
   },
   // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 24,
-    width: '80%',
-    alignItems: 'center',
-    shadowColor: '#000',
+    width: "80%",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
@@ -638,24 +728,24 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: "bold",
+    color: "#333",
     marginBottom: 20,
   },
   targetInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 10,
     padding: 12,
-    width: '100%',
+    width: "100%",
     fontSize: 16,
     marginBottom: 20,
-    textAlign: 'center',
+    textAlign: "center",
   },
   modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
   },
   modalButton: {
     paddingVertical: 12,
@@ -663,20 +753,20 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     flex: 1,
     marginHorizontal: 5,
-    alignItems: 'center',
+    alignItems: "center",
   },
   cancelButton: {
-    backgroundColor: '#f0f0f0',
+    backgroundColor: "#f0f0f0",
   },
   saveButton: {
-    backgroundColor: '#90CAF9',
+    backgroundColor: "#90CAF9",
   },
   cancelButtonText: {
-    color: '#555',
-    fontWeight: '600',
+    color: "#555",
+    fontWeight: "600",
   },
   saveButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
 });

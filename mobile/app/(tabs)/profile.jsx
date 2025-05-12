@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
-  Alert,
   ScrollView,
 } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
@@ -15,6 +14,7 @@ import { useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import styles from "../../assets/styles/profile.js";
 import { useAuthApp } from "../../auth/authApp.js";
+import { showMessage } from "react-native-flash-message";
 
 const API_Path = `${API_URL}/users/me`;
 
@@ -26,7 +26,10 @@ export default function Profile() {
     email: "",
     firstname: "",
     lastname: "",
-    age: new Date(),
+    birthdate: new Date(),
+    weight: "",
+    height: "",
+    gender: "",
   });
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -66,11 +69,22 @@ export default function Profile() {
           email: userData.email || "",
           firstname: userData.firstname || "",
           lastname: userData.lastname || "",
-          age: userData.age ? new Date(userData.age) : new Date(),
+          birthdate: userData.birthdate
+            ? new Date(userData.birthdate)
+            : new Date(),
+          weight: userData.weight?.toString() || "",
+          height: userData.height?.toString() || "",
+          gender: userData.gender || "",
         });
       } catch (error) {
         console.error("Error fetching user profile:", error);
-        Alert.alert("Error", "Failed to load profile data");
+        showMessage({
+          message: "Error",
+          description: "Failed to load profile data",
+          type: "danger",
+          icon: "auto",
+          duration: 4000,
+        });
       } finally {
         setLoading(false);
       }
@@ -82,16 +96,7 @@ export default function Profile() {
   const handleAuthError = async () => {
     Alert.alert(
       "Authentication Error",
-      "Your session has expired. Please login again.",
-      [
-        {
-          text: "OK",
-          onPress: async () => {
-            await AsyncStorage.removeItem("token");
-            router.replace("/login"); // Navigate to login screen
-          },
-        },
-      ]
+      "Your session has expired. Please login again."
     );
     setLoading(false);
   };
@@ -103,7 +108,7 @@ export default function Profile() {
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
     if (selectedDate) {
-      setFormData((prev) => ({ ...prev, age: selectedDate }));
+      setFormData((prev) => ({ ...prev, birthdate: selectedDate }));
     }
   };
 
@@ -122,7 +127,7 @@ export default function Profile() {
       // Format the date for the API
       const formattedData = {
         ...formData,
-        age: formData.age.toISOString(), // Convert Date to ISO string for API
+        birthdate: formData.birthdate.toISOString(),
       };
 
       const response = await fetch(API_Path, {
@@ -146,10 +151,22 @@ export default function Profile() {
       const updatedUser = await response.json();
       setUser(updatedUser);
       setIsEditing(false);
-      Alert.alert("Success", "Profile updated successfully!");
+      showMessage({
+        message: "Success",
+        description: "Profile updated successfully!",
+        type: "success",
+        icon: "auto",
+        duration: 4000,
+      });
     } catch (error) {
       console.error("Update error:", error);
-      Alert.alert("Error", "Failed to update profile");
+      showMessage({
+        message: "Error",
+        description: "Failed to update profile",
+        type: "danger",
+        icon: "auto",
+        duration: 4000,
+      });
     }
   };
 
@@ -176,20 +193,11 @@ export default function Profile() {
       >
         <Text>Failed to load user data.</Text>
         <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => {
-            setLoading(true);
-            fetchUserData();
-          }}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
           style={[
             styles.retryButton,
             { marginTop: 10, backgroundColor: "#f44336" },
           ]}
-          onPress={() => router.put("/login")}
+          onPress={logout}
         >
           <Text style={styles.retryButtonText}>Go to Login</Text>
         </TouchableOpacity>
@@ -198,7 +206,10 @@ export default function Profile() {
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 100 }}
+    >
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleGoBack}>
@@ -258,6 +269,42 @@ export default function Profile() {
           onChangeText={(text) => handleInputChange("lastname", text)}
         />
 
+        <View style={styles.section}>
+          <Text style={styles.label}>Select Your Gender</Text>
+          <View style={styles.genderContainer}>
+            {[
+              { label: "Male", icon: "👨", value: "male" },
+              { label: "Female", icon: "👩", value: "female" },
+            ].map((option) => (
+              <TouchableOpacity
+                key={option.value}
+                style={[
+                  styles.genderOption,
+                  formData.gender === option.value &&
+                    styles.genderOptionSelected,
+                ]}
+                disabled={!isEditing}
+                onPress={() => {
+                  if (isEditing) {
+                    setFormData((prev) => ({ ...prev, gender: option.value }));
+                  }
+                }}
+              >
+                <Text style={styles.genderIcon}>{option.icon}</Text>
+                <Text
+                  style={[
+                    styles.genderLabel,
+                    formData.gender === option.value &&
+                      styles.genderLabelSelected,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         <Text style={styles.label}>Date of Birth</Text>
         <TouchableOpacity
           style={styles.input}
@@ -265,19 +312,49 @@ export default function Profile() {
           onPress={() => isEditing && setShowDatePicker(true)}
         >
           <Text style={styles.dateText}>
-            {formData.age.toLocaleDateString()}
+            {formData.birthdate.toLocaleDateString()}
           </Text>
         </TouchableOpacity>
 
         {showDatePicker && (
           <DateTimePicker
-            value={formData.age}
+            value={formData.birthdate}
             mode="date"
             display="default"
             onChange={handleDateChange}
             maximumDate={new Date()}
           />
         )}
+
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            gap: 10,
+          }}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Weight (kg)</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.weight}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("weight", text)}
+              keyboardType="numeric"
+            />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Height (cm)</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.height}
+              editable={isEditing}
+              onChangeText={(text) => handleInputChange("height", text)}
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
       </View>
 
       {/* Logout Button */}
