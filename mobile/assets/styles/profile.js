@@ -125,6 +125,23 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
   },
+  section: {
+    marginTop: 20,
+    padding: 15,
+    backgroundColor: "#F0F8FF",
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#D0E8F2",
+  },
+  waterText: {
+    fontSize: 16,
+    color: "#333",
+    lineHeight: 22,
+  },
+  waterHighlight: {
+    fontWeight: "bold",
+    color: "#6EC6F2",
+  },
 });
 
 export default styles;

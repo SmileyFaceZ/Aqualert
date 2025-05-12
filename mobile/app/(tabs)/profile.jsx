@@ -170,6 +170,32 @@ export default function Profile() {
     }
   };
 
+  const calculateAge = (birthdate) => {
+    const today = new Date();
+    const birthDate = new Date(birthdate);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const getRecommendedWaterIntake = (weight, age, sex) => {
+    const weightKg = parseFloat(weight);
+    const ageNum = parseInt(age);
+    const isMale = sex === "male";
+
+    if (isNaN(weightKg) || isNaN(ageNum)) return null;
+
+    let multiplier = 35;
+    if (isMale) multiplier += 5;
+    if (ageNum > 55) multiplier -= 5;
+    else if (ageNum < 18) multiplier -= 5;
+
+    return Math.round(weightKg * multiplier);
+  };
+
   if (loading) {
     return (
       <View
@@ -232,6 +258,30 @@ export default function Profile() {
             color="#6EC6F2"
           />
         </TouchableOpacity>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.label, { marginBottom: 4 }]}>
+          💧 Recommended Daily Water Intake
+        </Text>
+        {formData.weight && formData.birthdate && formData.gender ? (
+          <Text style={{ fontSize: 16, color: "#333" }}>
+            You should drink approximately{" "}
+            <Text style={{ fontWeight: "bold", color: "#6EC6F2" }}>
+              {getRecommendedWaterIntake(
+                formData.weight,
+                calculateAge(formData.birthdate),
+                formData.gender
+              )}{" "}
+              ml
+            </Text>{" "}
+            of water per day.
+          </Text>
+        ) : (
+          <Text style={{ fontSize: 14, color: "gray" }}>
+            Please complete your weight, gender and birthdate.
+          </Text>
+        )}
       </View>
 
       {/* Form */}
